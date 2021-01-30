@@ -52,7 +52,7 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "-basefolder /Users/johandegraeve/temp/xdripswift/xdrip/Storyboards/en.lproj"
+            argument = "-basefolder /Users/johandegraeve/temp/xdripswift/xdrip/Storyboards -listOfLanguageFolders  de.lproj,ar.lproj,nl.lproj"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
