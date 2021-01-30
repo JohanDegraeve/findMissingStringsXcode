@@ -5,9 +5,9 @@ import Foundation
 /// header to add when extending a strings file
 private let headerInfo = "\n" +
                          "\n" +
-                         "#############################################################################################\n" +
-                         "#####   Translation needed - remove this header after translation                       #####\n" +
-                         "#############################################################################################\n"
+                         "/////////////////////////////////////////////////////////////////////////////////////////////\n" +
+                         "/////   Translation needed - remove this header after translation                       /////\n" +
+                         "/////////////////////////////////////////////////////////////////////////////////////////////\n"
 
 /// argument name for base folder - example xdripswift/xdrip/Storyboards, means without specifying a language folder like en.lproj
 private let argumentNameBaseFolder = "-basefolder"
@@ -18,10 +18,14 @@ private let argumentNameBaseLanguage = "-baseLanguage"
 /// - list of subfolders with other languages to check, comma seperated list eg "de.lproj, fr.lproj, pt-BR.lproj"
 private let argumentListOfLanguageFolders = "-listOfLanguageFolders"
 
+/// where to find the swift files, that contain the NSLocalizedString localed string definitions, used to find the comments
+private let argumentSwiftFilesFolder = "-swiftFilesFolder"
+
 /// list of arguments, initalized with default values
 var arguments: [String : String] = [argumentNameBaseFolder: "",
                  argumentNameBaseLanguage : "en.lproj",
-                 argumentListOfLanguageFolders : ""]
+                 argumentListOfLanguageFolders : "",
+                 argumentSwiftFilesFolder : ""]
 
 // MARK: - main
 
@@ -30,6 +34,16 @@ read(commandLineArguments: CommandLine.arguments, storeIn: &arguments)
 
 // get all filenames in the folder baseFolder/baseLanguage
 if let baseFolder = arguments[argumentNameBaseFolder], let baseLanguage = arguments[argumentNameBaseLanguage] {
+    
+    /// comments found in swift files
+    var comments = [String: String]()
+    
+    // read comments from swiftFilesFolder, or at least try to
+    if let swiftFilesFolder = arguments[argumentSwiftFilesFolder], swiftFilesFolder.count > 0 {
+        
+        comments = getAllComments(textsPath: swiftFilesFolder)
+        
+    }
 
     /// path that has the base language files
     let baseLanguageFilesPath = baseFolder + "/" + baseLanguage
@@ -50,10 +64,10 @@ if let baseFolder = arguments[argumentNameBaseFolder], let baseLanguage = argume
         for languageFolder in languageFolders {
             
             /// full path where language string files are stored
-            let languageFilesPatch = baseFolder + "/" + languageFolder
+            let languageFilesPath = baseFolder + "/" + languageFolder
             
             /// get strings file in languageFolder, create the file if it doesn't exist
-            let languageStrings = readStrings(fromFile: stringFile, atPath: languageFilesPatch, createIfNotExisting: true)
+            let languageStrings = readStrings(fromFile: stringFile, atPath: languageFilesPath, createIfNotExisting: true)
             
             /// get missing strings in language specific file
             let missingStrings = getStrings(thatAreIn: baseLanguageStrings, butNotIn: languageStrings)
@@ -62,7 +76,7 @@ if let baseFolder = arguments[argumentNameBaseFolder], let baseLanguage = argume
             if missingStrings.count > 0 {
                 
                 // create outputstream
-                if let outputStream = OutputStream(toFileAtPath: languageFilesPatch + "/" + stringFile, append: true) {
+                if let outputStream = OutputStream(toFileAtPath: languageFilesPath + "/" + stringFile, append: true) {
                     
                     // open the outputStream
                     outputStream.open()
@@ -73,8 +87,12 @@ if let baseFolder = arguments[argumentNameBaseFolder], let baseLanguage = argume
                     // add missing strings
                     for (key, value) in missingStrings {
                         
+                        var comment = comments[key]
+                        if comment == nil {comment = ""}
+                        comment = "/// " + comment!
+                        
                         // write string to file
-                        writeToFile(outputStream: outputStream, stringToWrite: "\"" + key + "\" = \"" + value + "\";\n")
+                        writeToFile(outputStream: outputStream, stringToWrite: "\n" + comment! + "\n\"" + key + "\" = \"" + value + "\";\n")
                         
                     }
                     
@@ -102,7 +120,7 @@ if let baseFolder = arguments[argumentNameBaseFolder], let baseLanguage = argume
 private func read(commandLineArguments : [String], storeIn: inout [String : String]) {
     
     /// - if commandLineArguments is not uneven, then exit
-    /// - should be ueven because script name is always included
+    /// - should be uneven because script name is always included
     if commandLineArguments.count % 2 == 0 {
         fatalError("arguments are list of argument name and argument value. Argument name starts with '-'. Argument names and argument values are seperated by sapce. There seems to be something wrong in your list of arguments")
     }
@@ -243,6 +261,73 @@ private func getParsedText(text: String) -> [(key: String, text: String)] {
         let match = matches(for: exp, in: line)
         if match.count == 2 {
             dict.append((key: match[0], text: match[1]))
+        }
+    }
+    return dict
+}
+
+/// - parameters:
+///     - textsPath : foldername where all swift files with the string definitions can be found, the NSLocalizedString things
+private func getAllComments(textsPath: String) -> Dictionary<String, String> {
+    
+    // if textsPath does not exist, then crash
+    var isDirectory: ObjCBool = true
+    guard FileManager.default.fileExists(atPath: textsPath, isDirectory:&isDirectory) else {
+        fatalError("path " + textsPath + " does not exist")
+    }
+    
+    /// all swift files
+    let swiftFiles = readFiles(atPath: textsPath)
+
+    /// returnValue will have all keys and coments found in swift files
+    var returnValue = [String: String]()
+
+    // iterate through the files
+    for swiftFile in swiftFiles {
+     
+        // path + filename
+        let pathAndFileName = textsPath + "/" + swiftFile
+        
+        do {
+            
+            // get fileContents, as one string
+            let fileContents = try String(contentsOf: URL(fileURLWithPath: pathAndFileName), encoding: .utf8)
+            
+            // parse filecontents
+            let parsedText = getParsedComments(text: fileContents)
+            
+            // stored parsedText in dictionary
+            for pair in parsedText {
+                returnValue[pair.key] = pair.text
+            }
+            
+        } catch {
+            
+            fatalError("failed to read file " + swiftFile + ", at path " + textsPath)
+            
+        }
+
+    }
+    
+    // incase there's no swiftfiles found
+    return returnValue
+    
+}
+
+private func getParsedComments(text: String) -> [(key: String, text: String)] {
+    
+    var dict: [(key: String, text: String)] = []
+    
+    // looking in swift files for the comments, example of a line :
+    /* in this example we're interested in the key 'confirmdeletionalert' and the comment 'when trying to delete an alert, user needs to confirm first, this is the message'
+     return NSLocalizedString("confirmdeletionalert", tableName: filename, bundle: Bundle.main, value: "Delete Alarm?", comment: "when trying to delete an alert, user needs to confirm first, this is the message")
+     */
+    let exp = "(.*)\"(.*)\"(.*)\"(.*)\"(.*)\"(.*)\""
+    
+    for line in text.components(separatedBy: "\n") {
+        let match = matches(for: exp, in: line)
+        if match.count >= 6 {
+            dict.append((key: match[1], text: match[5]))
         }
     }
     return dict
