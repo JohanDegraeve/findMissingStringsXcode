@@ -4,7 +4,6 @@ import Foundation
 
 /// header to add when extending a strings file
 private let headerInfo = "\n" +
-                         "\n" +
                          "/////////////////////////////////////////////////////////////////////////////////////////////\n" +
                          "/////   Translation needed - remove this header after translation                       /////\n" +
                          "/////////////////////////////////////////////////////////////////////////////////////////////\n"
@@ -22,12 +21,16 @@ private let argumentListOfLanguageFolders = "-listOfLanguageFolders"
 private let argumentSwiftFilesFolder = "-swiftFilesFolder"
 
 /// list of arguments, initalized with default values
-var arguments: [String : String] = [argumentNameBaseFolder: "",
-                 argumentNameBaseLanguage : "en.lproj",
-                 argumentListOfLanguageFolders : "",
-                 argumentSwiftFilesFolder : ""]
+private var arguments: [String : String] = [String:String]()
+
+private let validArgumentNames = [argumentNameBaseFolder: "",
+                argumentNameBaseLanguage : "en.lproj",
+                argumentListOfLanguageFolders : "",
+                argumentSwiftFilesFolder : ""]
 
 // MARK: - main
+
+printInfo()
 
 /// read arguments from command line and store in arguments
 read(commandLineArguments: CommandLine.arguments, storeIn: &arguments)
@@ -52,7 +55,15 @@ if let baseFolder = arguments[argumentNameBaseFolder], let baseLanguage = argume
     let stringFilesInBaseLanguage = readFiles(atPath: baseLanguageFilesPath)
     
     /// list of language folders in [String]
-    guard let languageFolders = arguments[argumentListOfLanguageFolders]?.split(separator: ",").map({String($0)}) else {fatalError("failed to create list of language folders, check the argument value " + argumentListOfLanguageFolders)}
+    guard let languageFolders = arguments[argumentListOfLanguageFolders]?.split(separator: ",").map({String($0)}) else {
+        
+        print("failed to create list of language folders, check the argument value " + argumentListOfLanguageFolders)
+        
+        printHelp()
+        
+        exit(0)
+        
+    }
 
     // iterate through files
     for stringFile in stringFilesInBaseLanguage {
@@ -119,10 +130,11 @@ if let baseFolder = arguments[argumentNameBaseFolder], let baseLanguage = argume
 ///     - storeIn : must be preinitialized list of argumentname, argument value pairs
 private func read(commandLineArguments : [String], storeIn: inout [String : String]) {
     
-    /// - if commandLineArguments is not uneven, then exit
-    /// - should be uneven because script name is always included
-    if commandLineArguments.count % 2 == 0 {
-        fatalError("arguments are list of argument name and argument value. Argument name starts with '-'. Argument names and argument values are seperated by sapce. There seems to be something wrong in your list of arguments")
+    /// - count should be equal to 1 + 2* the actual number of arguments
+    if commandLineArguments.count != 1 + 2 * validArgumentNames.count {
+        print("arguments are list of argument name and argument value. Argument name starts with '-'. Argument names and argument values are seperated by sapce. There seems to be something wrong in your list of arguments")
+        printHelp()
+        exit(0)
     }
     
     // iterate through arguments
@@ -136,22 +148,26 @@ private func read(commandLineArguments : [String], storeIn: inout [String : Stri
         
         // argument name should start with -
         if !argumentName.starts(with: "-") {
-            fatalError("every argument name should start with '-'. Check argument name " + argumentName)
+            print("every argument name should start with '-'. Check argument name " + argumentName)
+            printHelp()
+            exit(0)
         }
         
         // get argument value
         let argumentValue = commandLineArguments[index + 1]
         
         // check if argument name is a valid one
-        if storeIn.index(forKey: argumentName) != nil {
+        if validArgumentNames.index(forKey: argumentName) != nil {
             
             storeIn.updateValue(argumentValue, forKey: argumentName)
             
         } else {
             
-            fatalError("invalid argument name : " + argumentName + ", allowed argument names must be intialized in variable arguments")
-            
+            print("invalid argument name : " + argumentName)
+            printHelp()
+            exit(0)
         }
+        
     }
     
 }
@@ -169,7 +185,9 @@ private func readStrings(fromFile: String, atPath: String, createIfNotExisting: 
     // if atPath does not exist, then crash
     var isDirectory: ObjCBool = true
     guard FileManager.default.fileExists(atPath: atPath, isDirectory:&isDirectory) else {
-        fatalError("path " + atPath + " does not exist")
+        print("path " + atPath + " does not exist")
+        printHelp()
+        exit(0)
     }
     
     // path + filename
@@ -212,8 +230,9 @@ private func readStrings(fromFile: String, atPath: String, createIfNotExisting: 
         
     } catch {
         
-        fatalError("failed to read file " + fromFile + ", at path " + atPath)
-        
+        print("failed to read file " + fromFile + ", at path " + atPath)
+        printHelp()
+        exit(0)
     }
     
 }
@@ -227,8 +246,10 @@ private func readFiles(atPath: String) -> [String] {
             
         } catch {
             
-            fatalError("failed to read files in " + atPath)
-            
+            print("failed to read files in " + atPath)
+            printHelp()
+            exit(0)
+
         }
     
 }
@@ -273,7 +294,9 @@ private func getAllComments(textsPath: String) -> Dictionary<String, String> {
     // if textsPath does not exist, then crash
     var isDirectory: ObjCBool = true
     guard FileManager.default.fileExists(atPath: textsPath, isDirectory:&isDirectory) else {
-        fatalError("path " + textsPath + " does not exist")
+        print("path " + textsPath + " does not exist")
+        printHelp()
+        exit(0)
     }
     
     /// all swift files
@@ -303,7 +326,7 @@ private func getAllComments(textsPath: String) -> Dictionary<String, String> {
             
         } catch {
             
-            fatalError("failed to read file " + swiftFile + ", at path " + textsPath)
+            print("failed to read file " + swiftFile + ", at path " + textsPath)
             
         }
 
@@ -357,4 +380,28 @@ private func writeToFile(outputStream: OutputStream, stringToWrite: String) {
     
     outputStream.write(stringToWriteAsUInt8, maxLength: stringToWriteAsUInt8.count)
     
+}
+
+private func printInfo() {
+    
+    print("Script to update .string files in Xcode project - run without arguments to print help info\n\n")
+    
+}
+
+private func printHelp() {
+    
+    print("- Reads string resource files in one language folder (usually Storyboard/en.lproj\n")
+    print("- For each file, and each string resource, reads key and value (key being used in string-loading routines NSLocalizedString, value being the actual text used)\n")
+    print("- The same for a list of other language folders (eg nl.lproj), reads every file and reads key/value pairs\n")
+    print("- Lists missing strings in the langugae folder and appends the base language strings to the other language files")
+    print("\n")
+    print("Arguments:\n")
+    print("  -basefolder : Storyboards foldername, example (using https://github.com/JohanDegraeve/xdripswift as sample Project) /Users/johandegraeve/temp/xdripswift/xdrip/Storyboards\n")
+    print("  -baseLanguage : The language from which strings will be copied to other languages, example en.lproj\n")
+    print("  -listOfLanguageFolders : list of language folders, comma seperated, example (using xdripswift as sample Project) 'nl.lproj,ar.lproj'\n")
+    print("  -swiftFilesFolder : swift files foldernames, used to retrieve the comments. Example : /Users/johandegraeve/temp/xdripswift/xdrip/Texts\n")
+    print("\n")
+    print("Example arguments : uses en.lproj as base language, missing strings in folder nl.lproj and ar.lproj will be added (if necessary missing files are created), inclusive comments found in swift files\n")
+    print("   -basefolder /Users/johandegraeve/temp/xdripswift/xdrip/Storyboards -baseLanguage en.lproj -listOfLanguageFolders nl.lproj,ar.lproj -swiftFilesFolder /Users/johandegraeve/temp/xdripswift/xdrip/Texts\n")
+
 }
