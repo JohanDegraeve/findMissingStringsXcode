@@ -86,14 +86,18 @@ if let baseFolder = arguments[argumentNameBaseFolder], let baseLanguage = argume
             // if there are missing strings
             if missingStrings.count > 0 {
                 
+                /// path + string file name
+                let languageFilePatchAndString = languageFilesPath + "/" + stringFile
+                
                 // create outputstream
-                if let outputStream = OutputStream(toFileAtPath: languageFilesPath + "/" + stringFile, append: true) {
+                if let outputStream = OutputStream(toFileAtPath: languageFilePatchAndString, append: true) {
                     
                     // open the outputStream
                     outputStream.open()
                     
                     // write headerinfo to file
                     writeToFile(outputStream: outputStream, stringToWrite: headerInfo)
+                    print("\nAppending header to file " + languageFilePatchAndString)
                     
                     // add missing strings
                     for (key, value) in missingStrings {
@@ -102,6 +106,7 @@ if let baseFolder = arguments[argumentNameBaseFolder], let baseLanguage = argume
                         if comment == nil {comment = ""}
                         comment = "/// " + comment!
                         
+                        print("Adding string with key " + key + ", to file " + stringFile)
                         // write string to file
                         writeToFile(outputStream: outputStream, stringToWrite: "\n" + comment! + "\n\"" + key + "\" = \"" + value + "\";\n")
                         
