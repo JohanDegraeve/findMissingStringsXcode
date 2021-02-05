@@ -28,4 +28,8 @@ Arguments:
 Example arguments : uses en.lproj as base language, missing strings in folder nl.lproj and ar.lproj will be added (if necessary missing files are created), inclusive comments found in swift files
 
    -basefolder /Users/johandegraeve/temp/xdripswift/xdrip/Storyboards -baseLanguage en.lproj -listOfLanguageFolders nl.lproj,ar.lproj -swiftFilesFolder /Users/johandegraeve/temp/xdripswift/xdrip/Texts
+   
+   
+For the xdripswift project
+./findMissingStrings -basefolder /Users/johandegraeve/temp/xdripswift/xdrip/Storyboards -baseLanguage en.lproj -listOfLanguageFolders nl.lproj,ar.lproj,de.lproj,es.lproj,fi.lproj,fr.lproj,it.lproj,pl-PL.lproj,pt.lproj,ru.lproj,sl.lproj,zh.lproj -swiftFilesFolder /Users/johandegraeve/temp/xdripswift/xdrip/Texts
 
