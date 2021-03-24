@@ -31,5 +31,10 @@ Example arguments : uses en.lproj as base language, missing strings in folder nl
    
    
 For the xdripswift project
-./findMissingStrings -basefolder /Users/johandegraeve/temp/xdripswift/xdrip/Storyboards -baseLanguage en.lproj -listOfLanguageFolders nl.lproj,ar.lproj,de.lproj,es.lproj,fi.lproj,fr.lproj,it.lproj,pl-PL.lproj,pt.lproj,ru.lproj,sl.lproj,zh.lproj -swiftFilesFolder /Users/johandegraeve/temp/xdripswift/xdrip/Texts
+
+./findMissingStrings -basefolder /Users/johandegraeve/temp/xdripswift/xdrip/Storyboards -baseLanguage en.lproj -listOfLanguageFolders nl.lproj,ar.lproj,de.lproj,es.lproj,fi.lproj,fr.lproj,it.lproj,pl-PL.lproj,pt.lproj,ru.lproj,sl.lproj,zh.lproj,sv.lproj -swiftFilesFolder /Users/johandegraeve/temp/xdripswift/xdrip/Texts
+
+For the xdripswift Widget
+
+./findMissingStrings -basefolder /Users/johandegraeve/temp/xdripswift/xdrip/Storyboards -baseLanguage en.lproj -listOfLanguageFolders nl.lproj,ar.lproj,de.lproj,es.lproj,fi.lproj,fr.lproj,it.lproj,pl-PL.lproj,pt.lproj,ru.lproj,sl.lproj,zh.lproj,sv.lproj -swiftFilesFolder /Users/johandegraeve/temp/xdripswift/xdrip/Texts
 
