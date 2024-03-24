@@ -34,7 +34,4 @@ For the xdripswift project
 
 ./findMissingStrings -basefolder /Users/johandegraeve/temp/xdripswift/xdrip/Storyboards -baseLanguage en.lproj -listOfLanguageFolders nl.lproj,ar.lproj,de.lproj,es.lproj,fi.lproj,fr.lproj,it.lproj,pl-PL.lproj,pt.lproj,ru.lproj,sl.lproj,zh.lproj,sv.lproj,da.lproj,uk.lproj,el.lproj,tr.lproj -swiftFilesFolder /Users/johandegraeve/temp/xdripswift/xdrip/Texts
 
-For the xdripswift Widget
-
-./findMissingStrings -basefolder /Users/johandegraeve/temp/xdripswift/xdrip/Storyboards -baseLanguage en.lproj -listOfLanguageFolders nl.lproj,ar.lproj,de.lproj,es.lproj,fi.lproj,fr.lproj,it.lproj,pl-PL.lproj,pt.lproj,ru.lproj,sl.lproj,zh.lproj,sv.lproj,da.lproj,uk.lproj,el.lproj,tr.lproj -swiftFilesFolder /Users/johandegraeve/temp/xdripswift/xdrip/Texts
 
